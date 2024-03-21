@@ -1,0 +1,12 @@
+{
+  "watch": [
+      "src",
+      ".env",
+      "prisma"
+  ],
+  "ext": "js,ts,json",
+  "ignore": [
+      "src/**/*.{spec,test}.ts"
+  ],
+  "exec": "prisma db push && ts-node ./src/index.ts"
+}
