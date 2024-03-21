@@ -1,7 +1,7 @@
 import validate from ".";
 import prisma from "../prisma_client";
 
-const valdateCreateProduct = validate({
+export const validateCreateProduct = validate({
   name: {
     in: ["body"],
     isString: true,
@@ -35,5 +35,82 @@ const valdateCreateProduct = validate({
   price: {
     in: ["body"],
     isInt: true,
+  }
+})
+
+
+export const validateUpdateProduct = validate({
+  id: {
+    in: ["params"],
+    isString: true,
+    custom: {
+      options: async (id: string, { req }) => {
+        const product = await prisma.product.findFirst({
+          where: { id, owner_id: req.body.auth_user.id },
+          select: { id: true, name: true }
+        })
+
+        if (!product) {
+          throw new Error("Product not found!")
+        }
+      }
+    }
+  },
+  name: {
+    in: ["body"],
+    isString: true,
+    notEmpty: true,
+    custom: {
+      options: async (name: string, { req }) => {
+        const { auth_user } = req.body;
+
+        const product = await prisma.product.findFirst({
+          where: {
+            name,
+            owner_id: auth_user.id
+          }
+        })
+
+        if (product) {
+          throw new Error("This product already exists!")
+        }
+      }
+    },
+    optional: true
+  },
+  img: {
+    in: ["body"],
+    isURL: true,
+    optional: true,
+  },
+  description: {
+    in: ["body"],
+    isString: true,
+    notEmpty: true,
+    optional: true,
+  },
+  price: {
+    in: ["body"],
+    isInt: true,
+    optional: true
+  }
+})
+
+export const validateGetProduct = validate({
+  id: {
+    in: ["params"],
+    isString: true,
+    custom: {
+      options: async (id: string) => {
+        const product = await prisma.product.findFirst({
+          where: { id,  },
+          select: { id: true, name: true }
+        })
+
+        if (!product) {
+          throw new Error("Product not found!")
+        }
+      }
+    }
   }
 })

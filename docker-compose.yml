@@ -1,0 +1,31 @@
+version: '3'
+
+networks:
+  mainstack_net:
+    name: mainstack_net
+
+services:
+  web:
+    build: .
+    ports:
+      - "${PORT}:${PORT}"
+    networks:
+      - mainstack_net
+    environment:
+      - NODE_ENV=production
+      - PORT=${PORT}
+      - CLOUDINARY_KEY=${CLOUDINARY_KEY}
+      - CLOUDINARY_SECRET=${CLOUDINARY_SECRET}
+      - CLOUDINARY_NAME=${CLOUDINARY_NAME}
+      - DATABASE_URL=mongodb://mongodb:27017/mainstack
+    depends_on:
+      - mongodb
+    dns:
+      - 8.8.8.8
+
+  mongodb:
+    image: mongo
+    container_name: mongodb
+    restart: always
+    networks:
+      - mainstack_net
