@@ -2,15 +2,18 @@ import { Request, Response } from "express";
 import { created, serverError, success, successAction, successPaginated } from "../utils/api_response";
 import prisma from "../prisma_client";
 import { PaginatedQueryParam } from "../interface";
+import { Product, User } from "@prisma/client";
+import { nanoid } from "nanoid";
+import Paystack from "../utils/paystack";
 
 
 export const createProduct = async (req: Request, res: Response) => {
-  const { name, auth_user, price, description, img } = req.body;
+  const { name, price, description, img } = req.body;
 
   try {
     const product = await prisma.product.create({
       data: {
-        name, owner_id: auth_user.id, price, description, img
+        name, price: Number(price) * 100, description, img
       },
       select: {
         id: true, name: true, price: true, description: true, img: true,
@@ -19,6 +22,7 @@ export const createProduct = async (req: Request, res: Response) => {
 
     return created(res, product, "Your product was created successfully!")
   } catch (error) {
+    console.log(error)
     return serverError(res);
   }
 }
@@ -52,7 +56,6 @@ export const getOneProduct = async (req: Request, res: Response) => {
       where: { id },
       select: {
         id: true,
-        owner: true,
         name: true,
         description: true,
         img: true,
@@ -73,7 +76,6 @@ export const getAllProducts = async (req: Request, res: Response) => {
     const products = await prisma.product.findMany({
       select: {
         id: true,
-        owner: true,
         name: true,
         description: true,
         img: true,
@@ -92,6 +94,33 @@ export const getAllProducts = async (req: Request, res: Response) => {
       page,
       list: products
     })
+  } catch (error) {
+    return serverError(res);
+  }
+}
+
+export const buyProduct = async (req: Request, res: Response) => {
+  const { id } = req.params;
+  const { auth_user, product, stock = 1 } = req.body as { auth_user: User, product: Product, stock: number };
+
+  try {
+    const refrence_id = nanoid(10);
+    const paystack = new Paystack();
+
+    const result = await paystack.createCharge({ reference: refrence_id, amount: product.price * stock, email: auth_user.email })
+
+    const order = await prisma.order.create({
+      data: {
+        product_id: id,
+        user_id: auth_user.id,
+        amount: product.price * stock,
+        refrence_id,
+        stock,
+        payment_link: result.authorization_url
+      }
+    })
+
+    return created(res, order, "Your order was created successfully please make payment immediately")
   } catch (error) {
     return serverError(res);
   }

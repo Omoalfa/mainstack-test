@@ -1,9 +1,8 @@
 import express, { Request, Response } from "express";
-import userRoute from "./routes/user"
-import productRoute from "./routes/product"
-import orderRoute from "./routes/order"
+import v1Router from "./routes/v1"
 import { config } from "dotenv";
 import fileUpload from "express-fileupload";
+import { createSuperAdmin } from "./utils/admin/helper";
 
 config()
 
@@ -16,9 +15,7 @@ app.use(fileUpload({
   tempFileDir : '/tmp/'
 }));
 
-app.use("/users", userRoute);
-app.use("/products", productRoute);
-app.use("/orders", orderRoute);
+app.use("/api/v1", v1Router);
 
 
 app.get("/", (req: Request, res: Response) => {
@@ -32,6 +29,12 @@ app.get("/", (req: Request, res: Response) => {
 
 app.get("/doc", (req: Request, res: Response) => {
   return res.redirect(process.env.POSTMAN_DOC as string)
+})
+
+createSuperAdmin().then(result => {
+  console.log(result.message) 
+}).catch(error => {
+  console.log(error.message);
 })
 
 const server = app.listen(process.env.PORT, () => {

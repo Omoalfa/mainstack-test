@@ -3,4 +3,5 @@ export interface PaginatedQueryParam {
   page: number,
 }
 
+export type AsyncFunc<T, Res> = (args: T) => Promise<Res>
 

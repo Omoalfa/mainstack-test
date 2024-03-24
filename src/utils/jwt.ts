@@ -9,10 +9,10 @@ export const encodeOTP = (code: string, email: string): string => {
   return jwt.sign({ code, email }, JWT_SECRET, { expiresIn: "15m" })
 }
 
-export const decodeOTP = (token: string): { email: string, code: string } => {
+export const decodeOTP = (token: string): { email: string, code: string, exp: number } => {
   return jwt.decode(token) as { email: string, code: string, exp: number };
 }
 
-export const decodeToken = (token: string): { email: string, id: string } => {
+export const decodeToken = (token: string): { email: string, id: string, exp: number } => {
   return jwt.decode(token) as { email: string, id: string, exp: number };
 }

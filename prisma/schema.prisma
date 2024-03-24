@@ -13,6 +13,17 @@ datasource db {
   url      = env("DATABASE_URL")
 }
 
+enum UserRole {
+  ADMIN
+  USER
+}
+
+enum OrderStatus {
+  PENDING
+  COMPLETED
+  FAILED
+}
+
 model User {
   id            String      @id @default(auto()) @map("_id") @db.ObjectId
   email         String      @unique
@@ -22,11 +33,11 @@ model User {
   is_verified   Boolean     @default(false)
   pwd_reset_key String?
   ver_key       String?
-  products      Product[]
-  cart          CartItem[]
   orders        Order[]
   created_at    DateTime    @default(now())
   deleted_at    DateTime?
+  role          UserRole    @default(USER)
+  permissions   String?
 }
 
 model Product {
@@ -35,41 +46,20 @@ model Product {
   price         Int
   description   String
   img           String
-  owner         User        @relation(fields: [owner_id], references: [id])
-  owner_id       String      @db.ObjectId
-  carts         CartItem[]
-  orders        OrderProducts[]
+  orders        Order[]
   created_at    DateTime     @default(now())
-}
-
-model CartItem {
-  id            String      @id @default(auto()) @map("_id") @db.ObjectId
-  stock         Int
-  user_id        String      @db.ObjectId
-  user          User        @relation(fields: [user_id], references: [id])
-  added_at      DateTime    @default(now())
-  product_id     String      @db.ObjectId
-  product       Product     @relation(fields: [product_id], references: [id])
-}
-
-model OrderProducts {
-  id            String      @id @default(auto()) @map("_id") @db.ObjectId
-  product_id     String      @db.ObjectId
-  product       Product     @relation(fields: [product_id], references: [id])
-  order_id      String       @db.ObjectId
-  order         Order        @relation(fields: [order_id], references: [id])
-  stock         Int
-  unit_price    Int
-  total_price   Int
 }
 
 model Order {
   id            String      @id @default(auto()) @map("_id") @db.ObjectId
   amount        Int
+  status        OrderStatus @default(PENDING)
+  payment_link  String?
   refrence_id   String      @unique
   user          User        @relation(fields: [user_id], references: [id])
-  user_id        String      @db.ObjectId
-  product_id     String      @db.ObjectId
-  order_products OrderProducts[]
-  created_at     DateTime     @default(now())
+  user_id       String      @db.ObjectId
+  stock         Int         @default(1)
+  product_id    String      @db.ObjectId
+  product       Product     @relation(fields: [product_id], references: [id])
+  created_at    DateTime     @default(now())
 }

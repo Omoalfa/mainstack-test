@@ -7,13 +7,11 @@ export const validateCreateProduct = validate({
     isString: true,
     notEmpty: true,
     custom: {
-      options: async (name: string, { req }) => {
-        const { auth_user } = req.body;
+      options: async (name: string) => {
 
         const product = await prisma.product.findFirst({
           where: {
             name,
-            owner_id: auth_user.id
           }
         })
 
@@ -46,7 +44,7 @@ export const validateUpdateProduct = validate({
     custom: {
       options: async (id: string, { req }) => {
         const product = await prisma.product.findFirst({
-          where: { id, owner_id: req.body.auth_user.id },
+          where: { id },
           select: { id: true, name: true }
         })
 
@@ -61,13 +59,11 @@ export const validateUpdateProduct = validate({
     isString: true,
     notEmpty: true,
     custom: {
-      options: async (name: string, { req }) => {
-        const { auth_user } = req.body;
+      options: async (name: string) => {
 
         const product = await prisma.product.findFirst({
           where: {
-            name,
-            owner_id: auth_user.id
+            name
           }
         })
 
@@ -112,5 +108,30 @@ export const validateGetProduct = validate({
         }
       }
     }
+  }
+})
+
+export const validateBuyProduct = validate({
+  id: {
+    in: ["params"],
+    isString: true,
+    notEmpty: true,
+    custom: {
+      options: async (id: string, { req }) => {
+        const product = await prisma.product.findFirst({
+          where: { id },
+          select: { price: true, id: true }
+        })
+
+        if (!product) throw new Error("Product not found!")
+
+        req.body.product = product;
+      }
+    }
+  },
+  stock: {
+    in: ["body"],
+    isInt: true,
+    optional: true,
   }
 })

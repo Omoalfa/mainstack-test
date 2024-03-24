@@ -6,7 +6,7 @@ import { encodeOTP, generateToken } from "../utils/jwt";
 import { sendMail } from "../utils/mailer";
 import { User } from "@prisma/client";
 import bcrypt from "bcryptjs";
-import { AuthRequest } from "../interface";
+import { resendVerificationCode } from "../utils/helper";
 
 export const createUser = async (req: Request, res: Response) => {
   const { name, email, password: raw } = req.body;
@@ -39,6 +39,7 @@ export const createUser = async (req: Request, res: Response) => {
 
     return created(res, user, "Please check your email for your verification code")
   } catch (error) {
+    console.log(error)
     return serverError(res);
   }
 }
@@ -55,6 +56,18 @@ export const verifyUserEmail = async (req: Request, res: Response) => {
   }
 }
 
+export const resendOTP = async (req: Request, res: Response) => {
+  const { skipped, user } = req.body;
+
+  try {
+    !skipped && await resendVerificationCode(user);
+
+    return successAction(res);
+  } catch (error) {
+    return serverError(res);
+  }
+}
+
 export const login = async (req: Request, res: Response) => {
   const { user } = req.body as { user: User };
 
@@ -63,6 +76,7 @@ export const login = async (req: Request, res: Response) => {
 
     return success(res, { token }, "User logged in successfully")
   } catch (error) {
+    console.log(error);
     return serverError(res);
   }
 }
@@ -76,9 +90,11 @@ export const forgetPassword = async (req: Request, res: Response) => {
     if (user) {
       const otp = nanoid(6);
 
+      console.log(user, otp);
+
       const pwd_reset_key = encodeOTP(otp, email);
 
-      await prisma.user.update({ where: { email }, data: { pwd_reset_key }})
+      await prisma.user.update({ where: { id: user.id }, data: { pwd_reset_key }})
 
       await sendMail({
         to: email,
